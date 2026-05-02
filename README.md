@@ -38,7 +38,7 @@ pip install opencv-python numpy
 Run the script from the project root:
 
 ```bash
-python "main (2).py"
+python "main.py"
 ```
 
 You do not need to move into `dataset/` or `results/`. The script now resolves both folders relative to the script location.
@@ -64,7 +64,19 @@ Dataset already exists: 200 images found, skipping generation.
 =============================================
 ```
 
-It also writes one processed edge image per input image into `results/`.
+Each line comes from a specific part of the script:
+
+- `Dataset already exists...` comes from `generate_dataset()`, which skips synthetic image creation if `dataset/` already has images.
+- `Total Images` is the number of image files found in `dataset/`.
+- `CPU Cores` comes from `cpu_count()`.
+- `Workload` shows the value of `WORKLOAD_PASSES`, the number of blur/Canny passes applied to each image.
+- `Sequential` is the time for processing all images one by one in `run_sequential()`.
+- `Parallel` is the time for processing the same images with `Pool.map()` in `run_parallel()`.
+- `Speedup` is calculated as `sequential_time / parallel_time`.
+- `Efficiency` is calculated as `(speedup / PARALLEL_PROCESSES) * 100`.
+- `Results saved...` confirms that the processed edge images were written to `results/`.
+
+The files in `results/` are the final edge-detected images, one output image for each input image.
 
 ## Notes
 
