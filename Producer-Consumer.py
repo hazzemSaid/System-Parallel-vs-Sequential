@@ -1,9 +1,9 @@
-import cv2
 import os
 import time
 import multiprocessing
 
 from main import NUM_IMAGES, generate_dataset
+from pipeline import process_image as _pipeline_process
 
 # الإعدادات
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,8 +16,8 @@ def producer(q, image_paths):
     for path in image_paths:
         q.put(path)
         # todo function to read file and put in queue
-        time.sleep(0.9) # محاكاة وقت قراءة الملف
         print(f"[Producer] Added to queue: {os.path.basename(path)}")
+        time.sleep(0.9) # محاكاة وقت قراءة الملف
     
     # إرسال إشارة توقف لكل مستهلك
     for _ in range(NUM_CONSUMERS):
@@ -27,20 +27,10 @@ def consumer(q, consumer_id):
     """المستهلك: يسحب المهام ويعالجها بشكل متوازٍ"""
     while True:
         path = q.get()
-        if path is None: # استلام إشارة النهاية[cite: 1]
+        if path is None:  # استلام إشارة النهاية
             break
-        
-        filename = os.path.basename(path)
-        img = cv2.imread(path)
-        if img is not None:
-            # تنفيذ عمليات معالجة الصور (CPU-bound)[cite: 1]
-            img = cv2.resize(img, (800, 800))
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            blur = cv2.GaussianBlur(gray, (9, 9), 0)
-            edges = cv2.Canny(blur, 100, 200)
-            
-            cv2.imwrite(os.path.join(OUTPUT_DIR, filename), edges)
-            print(f"[Consumer {consumer_id}] Finished: {filename}")
+        _pipeline_process(path, OUTPUT_DIR)
+        print(f"[Consumer {consumer_id}] Finished: {os.path.basename(path)}")
 
 if __name__ == "__main__":
     generate_dataset()  # توليد الصور الاصطناعية
@@ -51,14 +41,7 @@ if __name__ == "__main__":
     def seq_baseline(image_paths):
         start = time.time()
         for path in image_paths:
-            filename = os.path.basename(path)
-            img = cv2.imread(path)
-            if img is not None:
-                img = cv2.resize(img, (800, 800))
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                blur = cv2.GaussianBlur(gray, (9, 9), 0)
-                edges = cv2.Canny(blur, 100, 200)
-                cv2.imwrite(os.path.join(OUTPUT_DIR, filename), edges)
+            _pipeline_process(path, OUTPUT_DIR)
         return time.time() - start
 
     seq_time = seq_baseline(image_paths)

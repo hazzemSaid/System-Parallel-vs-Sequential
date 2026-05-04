@@ -4,6 +4,7 @@ import time
 import numpy as np
 import random
 from multiprocessing import Pool, cpu_count
+from pipeline import process_image as _process_image
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_DIR = os.path.join(BASE_DIR, "dataset")
@@ -11,7 +12,6 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "results")
 NUM_IMAGES = 200
 PARALLEL_PROCESSES = 4
 CHUNKSIZE = 10
-WORKLOAD_PASSES = 10
 
 
 # ---------- Dataset Generator ----------
@@ -48,23 +48,10 @@ def generate_dataset(n=NUM_IMAGES, seed=42):
 
     print(f"Generated {n} synthetic images in '{INPUT_DIR}/'")
 
-x=1
 # ---------- Image Processing ----------
 def process_image(path):
-    filename = os.path.basename(path)
-    img = cv2.imread(path)
-    if img is None:
-        print(f"[WARN] Could not read: {path}")
-        return
-
-    img = cv2.resize(img, (800, 800))
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    for _ in range(WORKLOAD_PASSES):
-        blur = cv2.GaussianBlur(gray, (9, 9), 0)
-        edges = cv2.Canny(blur, 100, 200)
-
-    cv2.imwrite(os.path.join(OUTPUT_DIR, filename), edges)
+    """Module-level wrapper so Pool.map can pickle this function."""
+    _process_image(path, OUTPUT_DIR)
 
 
 # ---------- Sequential ----------
@@ -103,7 +90,7 @@ def main():
     print(f"\n{'='*45}")
     print(f"  Total Images : {len(image_paths)}")
     print(f"  CPU Cores    : {cores}")
-    print(f"  Workload     : {WORKLOAD_PASSES} blur/canny passes per image")
+    print(f"  Pipeline     : Resize → Grayscale → Blur → Canny")
     print(f"{'='*45}")
 
     # Sequential
