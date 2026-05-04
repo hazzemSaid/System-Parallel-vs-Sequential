@@ -10,7 +10,7 @@ INPUT_DIR = os.path.join(BASE_DIR, "dataset")
 OUTPUT_DIR = os.path.join(BASE_DIR, "results")
 NUM_IMAGES = 200
 PARALLEL_PROCESSES = 4
-CHUNKSIZE = 5
+CHUNKSIZE = 10
 WORKLOAD_PASSES = 10
 
 
@@ -48,12 +48,11 @@ def generate_dataset(n=NUM_IMAGES, seed=42):
 
     print(f"Generated {n} synthetic images in '{INPUT_DIR}/'")
 
-
+x=1
 # ---------- Image Processing ----------
 def process_image(path):
     filename = os.path.basename(path)
     img = cv2.imread(path)
-
     if img is None:
         print(f"[WARN] Could not read: {path}")
         return
@@ -80,7 +79,6 @@ def run_sequential(image_paths):
 def run_parallel(image_paths, processes=None, chunksize=10):
     if processes is None:
         processes = cpu_count()
-
     start = time.time()
     with Pool(processes=processes) as p:
         p.map(process_image, image_paths, chunksize=chunksize)
@@ -91,7 +89,6 @@ def run_parallel(image_paths, processes=None, chunksize=10):
 def main():
     generate_dataset()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
     image_paths = [
         os.path.join(INPUT_DIR, f)
         for f in sorted(os.listdir(INPUT_DIR))
